@@ -15,7 +15,7 @@ using namespace std;
 
 #define SIZE 128
 #define NUM 2
-#define WIDE 100
+#define WIDE 80
 #define HEIGHT 36
 
 typedef struct s_player
@@ -178,21 +178,32 @@ int main(void)
     g_heightLimit = g_player[1].y;//여기가 최대로 올라갈 수 있는 행
     g_player[1].oldX = g_player[1].x;
     g_player[1].oldY = g_player[1].y;
+    g_player[0].y = g_heightLimit;
+    g_player[0].oldY = g_heightLimit;
 
     while (true)
     {
-        if ((recvByte = recv(clientSocket, recvData, SIZE, 0)) < 0)//클라이언트가 보낸 데이터 recvData에 담음
-        {
+        if ((recvByte = recv(clientSocket, recvData, SIZE, 0)) < 0)
+        {//클라이언트가 보낸 패킷을 recvData에 담음
             printf("Failed recv()\n");
             closesocket(clientSocket);
             closesocket(listenSocket);
             WSACleanup();
             return 1;
         }
+
         g_player[0].x = recvData[0];
         g_player[0].y = recvData[1];
+        if (g_player[0].x != g_player[0].oldX || g_player[0].y != g_player[0].oldY)
+        {
+            GotoXY(g_player[0].oldX, g_player[0].oldY);
+            printf("  ");//이전에 찍힌 클라이언트 플레이어 잔상 지움
+        }
+
         GotoXY(g_player[0].x, g_player[0].y);
         printf("○");//화면에 클라이언트 플레이어 출력
+        g_player[0].oldX = g_player[0].x;
+        g_player[0].oldY = g_player[0].y;
         
         MoveServerPlayer();
         sendData[0] = g_player[1].x;

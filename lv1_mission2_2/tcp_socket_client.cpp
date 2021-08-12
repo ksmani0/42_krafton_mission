@@ -14,7 +14,7 @@ using namespace std;
 
 #define SIZE 64
 #define NUM 2
-#define WIDE 100
+#define WIDE 80
 #define HEIGHT 36
 
 typedef struct s_player
@@ -25,7 +25,7 @@ typedef struct s_player
     int oldY = 0;
 } t_player;//내 프로토콜
 
-t_player g_player[NUM];//0=client, 1=server. 얘네가 프로토콜의 type
+t_player g_player[NUM];//0=client, 1=server. 얘네가 프로토콜의 type인 것
 
 int g_heightLimit = 0;//이 이상 플레이어가 올라오지 못하게 막음
 
@@ -162,6 +162,8 @@ int main(void)
     g_heightLimit = g_player[0].y;//여기가 최대로 올라갈 수 있는 행
     g_player[0].oldX = g_player[0].x;
     g_player[0].oldY = g_player[0].y;
+    g_player[1].y = g_heightLimit;
+    g_player[1].oldY = g_heightLimit;
 
     while (true)
     {
@@ -169,18 +171,27 @@ int main(void)
         sendData[0] = g_player[0].x;//내 프로토콜에 맞춰 데이터 전달
         sendData[1] = g_player[0].y;
         send(hSocket, sendData, 3, 0);//플레이어 이동은 클라이언트가 먼저 보내고
-
+                
         if ((recvSize = recv(hSocket, recvData, SIZE, 0)) < 0)
-        {//이후에 서버의 플레이어 이동 좌표를 받음
+        {//이후에 서버가 보낸 패킷에서 서버 플레이어의 이동 좌표 받음
             printf("Failed recv()\n");
             closesocket(hSocket);
             WSACleanup();
             return 1;
         }
+
         g_player[1].x = recvData[0];
         g_player[1].y = recvData[1];
+        if (g_player[1].x != g_player[1].oldX || g_player[1].y != g_player[1].oldY)
+        {
+            GotoXY(g_player[1].oldX, g_player[1].oldY);
+            printf("  ");//이전에 찍힌 서버 플레이어 잔상 지움
+        }
+
         GotoXY(g_player[1].x, g_player[1].y);
         printf("●");//서버 플레이어는 다른 모양으로 출력
+        g_player[1].oldX = g_player[1].x;
+        g_player[1].oldY = g_player[1].y;
 
         if (GetAsyncKeyState(VK_ESCAPE))
             break;
