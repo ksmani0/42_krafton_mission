@@ -103,12 +103,14 @@ char StartMenu(void)
         GotoXY(0, STR_HEGITH);
         cout << "게임 모드를 선택해주세요!\n" << "N : 새 게임\n"
             << "L : 게임 이어하기\n" << "E : 게임 종료\n" << endl;
-        cout << "원하는 게임 모드의 영문자를 입력 후 엔터를 눌러주세요!" << endl;
-        cin >> mode;
-        cin.ignore(SIZE, '\n');//입력 키를 입력 버퍼에서 비워주기
-        if (mode != 'N' && mode != 'L' && mode != 'E')
-            cout << "잘못된 키를 눌렀습니다!" << endl;
-        else
+        cout << "원하는 게임 모드의 영문자를 눌러주세요!" << endl;
+        if (GetAsyncKeyState(0X4e) & 0x8000)
+            mode = 'N';
+        if (GetAsyncKeyState(0X4c) & 0x8000)
+            mode = 'L';
+        if (GetAsyncKeyState(0x45) & 0x8000)
+            mode = 'E';
+        if (mode == 'N' || mode == 'L' || mode == 'E')
             break;
     }
     if (mode == 'N')
@@ -159,7 +161,7 @@ bool LoadGame(void)
         if (result != g_player.hash)
         {
             GotoXY(WIDTH / 2, HEIGHT / 2);
-            cout << "로드된 파일에서 cheating을 감지했습니다!" << endl;
+            cout << "로드된 파일에서 cheat를 감지했습니다!" << endl;
             return false;
         }
         return true;
@@ -187,6 +189,10 @@ void MovePlayer(void)
         g_player.x = g_player.x == 0 ? 0 : g_player.x - 2;//반칸씩 움직여서 좌우 이동은 잔상 안 남음
     if (GetAsyncKeyState(VK_RIGHT) & 0x8000)
         g_player.x = g_player.x == WIDTH - 2 ? WIDTH - 2 : g_player.x + 2;
+    if (GetAsyncKeyState(VK_UP) & 0x8000)
+        g_player.y = g_player.y == 2 ? 2 : g_player.y - 1;
+    if (GetAsyncKeyState(VK_DOWN) & 0x8000)
+        g_player.y = g_player.y == HEIGHT - 2 ? HEIGHT - 2 : g_player.y + 1;
 }
 
 void PrintEnemyCheckCrash(void)
@@ -244,7 +250,7 @@ void ShootArrow(void)
     }
 }
 
-int ResultMenu(void)
+char ResultMenu(void)
 {
     char mode = 0;
 
@@ -256,14 +262,24 @@ int ResultMenu(void)
 
         cout << "\n게임 모드를 선택해주세요!\n" << "N : 새 게임\n"
             << "S : 게임 저장하기\n" << "L : 게임 불러오기\n" << "E : 게임 종료\n" << endl;
-        cout << "원하는 게임 모드의 영문자를 입력 후 엔터를 눌러주세요!\n" <<
+        cout << "원하는 게임 모드의 영문자를 눌러주세요!\n" <<
             "단 life가 0인 상태로 게임이 종료됐을 땐 게임이 저장되지 않습니다." << endl;
-        cin >> mode;
-        cin.ignore();//입력된 문자를 입력 버퍼에서 비움
-        if (mode != 'N' && mode != 'S' && mode != 'L' && mode != 'E' || (mode == 'S' && g_player.life == 0))
-            cout << "잘못된 키를 눌렀습니다!" << endl;
-        else
+        if (GetAsyncKeyState(0X4e) & 0x8000)
+            mode = 'N';
+        if (GetAsyncKeyState(0x53) & 0x8000 && g_player.life != 0)
+            mode = 'S';//목숨이 0이면 저장 불가
+        if (GetAsyncKeyState(0X4c) & 0x8000)
+            mode = 'L';
+        if (GetAsyncKeyState(0x45) & 0x8000)
+            mode = 'E';
+        if (mode == 'N' || mode == 'S' || mode == 'L' || mode == 'E')
             break;
+    }
+    
+    if (mode == 'N')
+    {
+        NewGame();
+        mode = 0;
     }
 
     return mode;
@@ -273,10 +289,10 @@ char RunGame(void)
 {
     while (true) {
         system("cls");//한 프레임 전의 상하 이동시 남는 잔상을 이게 지움
-        PrintState();
-
         if (g_player.bActive == false || GetAsyncKeyState(VK_ESCAPE))
             break;//GetAsyncKeyState(VK_ESCAPE) 이면 지금 눌렸거나 이전에 눌린 거 다 처리 가능
+
+        PrintState();
         SpawnEnemy();
         MovePlayer();
         ShootArrow();
@@ -300,8 +316,6 @@ int main(void)
     char mode = 'N';
     while (true)
     {
-        if (mode == 'E')
-            break;
         if (mode == 'N')
             mode = StartMenu();
         if (mode == 'L') {
@@ -316,6 +330,8 @@ int main(void)
                 break;
             }
         }
+        if (mode == 'E')
+            break;
 
         mode = RunGame();
     }
