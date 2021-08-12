@@ -90,6 +90,7 @@ void NewGame(void)
     GotoXY(0, HEIGHT / 2);
     cout << "플레이어 이름을 10글자 내로 적어주세요\n";
     cin >> g_player.name;
+    cin.clear(); //이름 잔상 지우기
     cin.ignore(SIZE, '\n'); //입력된 문자들을 버퍼에서 비움
 }
 
@@ -103,13 +104,8 @@ char StartMenu(void)
         GotoXY(0, STR_HEGITH);
         cout << "게임 모드를 선택해주세요!\n" << "N : 새 게임\n"
             << "L : 게임 이어하기\n" << "E : 게임 종료\n" << endl;
-        cout << "원하는 게임 모드의 영문자를 눌러주세요!" << endl;
-        if (GetAsyncKeyState(0X4e) & 0x8000)
-            mode = 'N';
-        if (GetAsyncKeyState(0X4c) & 0x8000)
-            mode = 'L';
-        if (GetAsyncKeyState(0x45) & 0x8000)
-            mode = 'E';
+        cout << "원하는 게임 모드의 영문자를 입력해주세요!" << endl;
+        mode = (char)cin.get();
         if (mode == 'N' || mode == 'L' || mode == 'E')
             break;
     }
@@ -199,7 +195,7 @@ void PrintEnemyCheckCrash(void)
 {
     for (int i = 0; i < MAX; ++i) {
         if (g_enemy[i].bSpawn == false)
-            break;
+            continue;//break에서 변경했더니 종종 적이 사라지는 현상 해결
         GotoXY(g_enemy[i].x, g_enemy[i].y);
         printf("☆");
         g_enemy[i].y++;
@@ -264,15 +260,8 @@ char ResultMenu(void)
             << "S : 게임 저장하기\n" << "L : 게임 불러오기\n" << "E : 게임 종료\n" << endl;
         cout << "원하는 게임 모드의 영문자를 눌러주세요!\n" <<
             "단 life가 0인 상태로 게임이 종료됐을 땐 게임이 저장되지 않습니다." << endl;
-        if (GetAsyncKeyState(0X4e) & 0x8000)
-            mode = 'N';
-        if (GetAsyncKeyState(0x53) & 0x8000 && g_player.life != 0)
-            mode = 'S';//목숨이 0이면 저장 불가
-        if (GetAsyncKeyState(0X4c) & 0x8000)
-            mode = 'L';
-        if (GetAsyncKeyState(0x45) & 0x8000)
-            mode = 'E';
-        if (mode == 'N' || mode == 'S' || mode == 'L' || mode == 'E')
+        mode = (char)cin.get();
+        if (mode == 'N' || (mode == 'S' && g_player.life != 0) || mode == 'L' || mode == 'E')
             break;
     }
     
@@ -342,3 +331,66 @@ int main(void)
     system("pause");//바로 꺼지지 않고 아무 키나 누르라고 함
     return 0;
 }
+
+/*
+char StartMenu(void)
+{
+    char mode = 0;
+
+    while (true)
+    {
+        system("cls");//콘솔 화면에 작업한 내용 지워줌
+        GotoXY(0, STR_HEGITH);
+        cout << "게임 모드를 선택해주세요!\n" << "N : 새 게임\n"
+            << "L : 게임 이어하기\n" << "E : 게임 종료\n" << endl;
+        cout << "원하는 게임 모드의 영문자를 눌러주세요!" << endl;
+        if (GetAsyncKeyState(0X4e) & 0x8000)
+            mode = 'N';
+        if (GetAsyncKeyState(0X4c) & 0x8000)
+            mode = 'L';
+        if (GetAsyncKeyState(0x45) & 0x8000)
+            mode = 'E';
+        if (mode == 'N' || mode == 'L' || mode == 'E')
+            break;
+    }
+    if (mode == 'N')
+        NewGame();
+
+    return mode;
+}
+
+char ResultMenu(void)
+{
+    char mode = 0;
+
+    while (true)
+    {
+        system("cls");
+        GotoXY(0, STR_HEGITH);
+        printf("Your score: %d\n", g_player.score);
+
+        cout << "\n게임 모드를 선택해주세요!\n" << "N : 새 게임\n"
+            << "S : 게임 저장하기\n" << "L : 게임 불러오기\n" << "E : 게임 종료\n" << endl;
+        cout << "원하는 게임 모드의 영문자를 눌러주세요!\n" <<
+            "단 life가 0인 상태로 게임이 종료됐을 땐 게임이 저장되지 않습니다." << endl;
+        if (GetAsyncKeyState(0X4e) & 0x8000)
+            mode = 'N';
+        if (GetAsyncKeyState(0x53) & 0x8000 && g_player.life != 0)
+            mode = 'S';//목숨이 0이면 저장 불가
+        if (GetAsyncKeyState(0X4c) & 0x8000)
+            mode = 'L';
+        if (GetAsyncKeyState(0x45) & 0x8000)
+            mode = 'E';
+        if (mode == 'N' || mode == 'S' || mode == 'L' || mode == 'E')
+            break;
+    }
+
+    if (mode == 'N')
+    {
+        NewGame();
+        mode = 0;
+    }
+
+    return mode;
+}
+*/
