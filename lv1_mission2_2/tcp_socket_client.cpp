@@ -61,7 +61,7 @@ void MoveClientPlayer()
         if (g_player[0].x != g_player[0].oldX || g_player[0].y != g_player[0].oldY)
         {
             GotoXY(g_player[0].oldX, g_player[0].oldY);
-            printf("  ");//화면에 출력하는 함수
+            printf("  ");//공백 2개 출력하면 잔상 지울 수 있음
         }
         GotoXY(g_player[0].x, g_player[0].y);
         printf("○");//화면에 출력하는 함수

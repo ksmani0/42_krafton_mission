@@ -106,9 +106,13 @@ char StartMenu(void)
             << "L : 게임 이어하기\n" << "E : 게임 종료\n" << endl;
         cout << "원하는 게임 모드의 영문자를 입력해주세요!" << endl;
         mode = (char)cin.get();
+        cin.clear(); //잔상 지우기
+        cin.ignore(SIZE, '\n'); //입력된 문자들을 버퍼에서 비움
         if (mode == 'N' || mode == 'L' || mode == 'E')
             break;
     }
+    cin.clear(); //잔상 지우기
+    cin.ignore(SIZE, '\n'); //입력된 문자들을 버퍼에서 비움
     if (mode == 'N')
         NewGame();
 
@@ -157,7 +161,8 @@ bool LoadGame(void)
         if (result != g_player.hash)
         {
             GotoXY(WIDTH / 2, HEIGHT / 2);
-            cout << "로드된 파일에서 cheat를 감지했습니다!" << endl;
+            cout << "\n\n!!!로드된 파일에서 cheat를 감지했습니다!!!" << endl;
+            Sleep(700);
             return false;
         }
         return true;
@@ -182,7 +187,7 @@ void SpawnEnemy(void)
 void MovePlayer(void)
 {
     if (GetAsyncKeyState(VK_LEFT) & 0x8000)
-        g_player.x = g_player.x == 0 ? 0 : g_player.x - 2;//반칸씩 움직여서 좌우 이동은 잔상 안 남음
+        g_player.x = g_player.x == 0 ? 0 : g_player.x - 2;
     if (GetAsyncKeyState(VK_RIGHT) & 0x8000)
         g_player.x = g_player.x == WIDTH - 2 ? WIDTH - 2 : g_player.x + 2;
     if (GetAsyncKeyState(VK_UP) & 0x8000)
@@ -261,9 +266,13 @@ char ResultMenu(void)
         cout << "원하는 게임 모드의 영문자를 눌러주세요!\n" <<
             "단 life가 0인 상태로 게임이 종료됐을 땐 게임이 저장되지 않습니다." << endl;
         mode = (char)cin.get();
+        cin.clear(); //잔상 지우기
+        cin.ignore(SIZE, '\n'); //입력된 문자들을 버퍼에서 비움
         if (mode == 'N' || (mode == 'S' && g_player.life != 0) || mode == 'L' || mode == 'E')
             break;
     }
+    cin.clear(); //잔상 지우기
+    cin.ignore(SIZE, '\n'); //입력된 문자들을 버퍼에서 비움
     
     if (mode == 'N')
     {
@@ -290,13 +299,14 @@ char RunGame(void)
 
         Sleep(50);//1000이면 1초
     }
+    cin.clear(); //잔상 지우기
 
     return ResultMenu();
 }
 
 int main(void)
 {
-    SetConsoleTitle(TEXT("min's game"));//이 함수는 char*가 아닌 wchar*를 인자로 받음
+    SetConsoleTitle(TEXT("seungmki's game"));//이 함수는 char*가 아닌 wchar*를 인자로 받음
     //그래서 매크로 TEXT() 사용
     srand(time(NULL));
     SetConsoleSize(WIDTH, HEIGHT);//콘솔 사이즈 설정
@@ -310,12 +320,14 @@ int main(void)
         if (mode == 'L') {
             if (LoadGame() == false) {
                 cout << "파일 불러오기에 실패했습니다!" << endl;
+                Sleep(700);
                 break;
             }
         }
         if (mode == 'S') {
             if (SaveGame() == false) {
                 cout << "파일 저장에 실패했습니다!" << endl;
+                Sleep(700);
                 break;
             }
         }
