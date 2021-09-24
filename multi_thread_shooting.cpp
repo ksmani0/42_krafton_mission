@@ -11,10 +11,12 @@
 
 using namespace std;
 #define SIZE 64
+#define MAX 10
 #define WIDTH 100
 #define HEIGHT 30
 
-struct Info {
+struct Info
+{
     int playerX = WIDTH / 2;//플레이어 시작 위치
     int playerY = HEIGHT - 2;
     int playerLife = 6;
@@ -23,7 +25,15 @@ struct Info {
     int enemyLife = 6;
 };
 
-Info g_info;
+struct Shoot
+{
+    int x;
+    int y = 0;
+};
+
+Info gInfo;
+Shoot gPlayer[MAX];
+Shoot gEnemy[MAX];
 
 void SetCursor(BOOL bshow)
 {//커서를 보이게 또는 안 보이게 하는 함수
@@ -70,11 +80,11 @@ void Title(void)
     printf("    ■    ■    ■    ■  ■  ■     ■    ■  ■    ■  ■     ■   \n"); Sleep(80);
     printf("     ■■■     ■■  ■  ■  ■      ■■■   ■    ■  ■    ■    \n"); Sleep(80);
     printf("\n\n");
-    printf("                                                    ■                ■■       \n"); Sleep(80);
-    printf("                  ■■■   ■          ■■■       ■    ■■■     ■      ■  \n"); Sleep(80);
-    printf("                 ■    ■  ■■■■  ■■■■■     ■  ■■■■■ ■■■  ■■■\n"); Sleep(80);
-    printf("                 ■    ■  ■    ■   ■            ■   ■          ■      ■  \n"); Sleep(80);
-    printf("                  ■■■   ■    ■    ■■■       ■    ■■■     ■      ■  \n"); Sleep(80);
+    printf("                                                      ■                ■■       \n"); Sleep(80);
+    printf("                    ■■■   ■          ■■■       ■    ■■■     ■      ■  \n"); Sleep(80);
+    printf("                   ■    ■  ■■■■  ■■■■■     ■  ■■■■■ ■■■  ■■■\n"); Sleep(80);
+    printf("                   ■    ■  ■    ■   ■            ■   ■          ■      ■  \n"); Sleep(80);
+    printf("                    ■■■   ■    ■    ■■■       ■    ■■■     ■      ■  \n"); Sleep(80);
 
     printf("\n\n\n\n");
     COORD cur = GetXY();
@@ -96,20 +106,44 @@ void EnemyProcess(mutex& m)
 
 void PrintPlayer(void)
 {
-    GotoXY(g_info.playerX + 2, g_info.playerY - 2); printf(" ■");
-    GotoXY(g_info.playerX + 1, g_info.playerY - 1); printf("■■■");
-    GotoXY(g_info.playerX, g_info.playerY); printf("■■■■");
+    GotoXY(gInfo.playerX + 2, gInfo.playerY - 2); printf(" ■");
+    GotoXY(gInfo.playerX + 1, gInfo.playerY - 1); printf("■■■");
+    GotoXY(gInfo.playerX, gInfo.playerY); printf("■■■■");
 }
 
 void MovePlayer(void)
 {
     if (GetAsyncKeyState(VK_LEFT) & 0x8000)
-        g_info.playerX = g_info.playerX == 0 ? 0 : g_info.playerX - 2;
+        gInfo.playerX = gInfo.playerX == 0 ? 0 : gInfo.playerX - 2;
     if (GetAsyncKeyState(VK_RIGHT) & 0x8000)
-        g_info.playerX = g_info.playerX == WIDTH - 8 ? WIDTH - 8 : g_info.playerX + 2;
+        gInfo.playerX = gInfo.playerX == WIDTH - 8 ? WIDTH - 8 : gInfo.playerX + 2;
 }
 
-void PrintState()
+void PlayerShoot(void)
+{
+    int count = 0;
+    char shoot = '*';
+
+    if (GetAsyncKeyState(VK_SPACE) & 0x8000)
+        count = count == MAX ? count : count + 1;
+    for (int i = 0; i < count; ++i)
+    {
+        gPlayer[i].x = gInfo.playerX + 2;
+        gPlayer[i].y = gPlayer[i].y == 0 ? HEIGHT - 3 : gPlayer[i].y - 1;
+        if (gPlayer[i].y > 2)
+        {
+            GotoXY(gPlayer[i].x, gPlayer[i].y);
+            cprintf("%c", shoot);//콘솔 출력
+        }
+        else
+        {
+            gPlayer[i].y = 0;
+            count--;
+        }
+    }
+}
+
+void PrintState(void)
 {
     GotoXY(WIDTH / 2 - 16, 0);
     int i = 7;
@@ -117,7 +151,7 @@ void PrintState()
     cout << "YOU ";
     while (--i != 0)
     {
-        if (i > g_info.playerLife)
+        if (i > gInfo.playerLife)
             cout << "☆";
         else
             cout << "★";
@@ -126,7 +160,7 @@ void PrintState()
     i = 0;
     while (++i != 7)
     {
-        if (i <= g_info.enemyLife)
+        if (i <= gInfo.enemyLife)
             cout << "★";
         else
             cout << "☆";
@@ -136,11 +170,12 @@ void PrintState()
 
 void PlayerProcess()
 {
-    while (g_info.playerLife != 0)
+    while (gInfo.playerLife != 0)
     {
         system("cls");
         MovePlayer();
         PrintPlayer();
+        PlayerShoot();
         PrintState();
     }
 }
@@ -148,7 +183,7 @@ void PlayerProcess()
 bool ResultDisplay(void)
 {
     GotoXY(WIDTH - 4, HEIGHT / 2 - 1);
-    if (g_info.playerLife != 0)
+    if (gInfo.playerLife != 0)
         printf("YOU WIN!\n");
     else
         printf("ENEMY WIN!\n");
