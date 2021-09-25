@@ -25,13 +25,22 @@ struct Info
     int enemyLife = 6;
 };
 
+struct OldInfo
+{
+    int playerX = WIDTH / 2;
+    int playerY = HEIGHT - 2;
+    int enemyX = WIDTH / 2;
+    int enemyY = 2;
+};
+
 struct Shoot
 {
-    int x;
+    int x = 0;
     int y = 0;
 };
 
 Info gInfo;
+OldInfo gOld;
 Shoot gPlayer[MAX];
 Shoot gEnemy[MAX];
 
@@ -106,6 +115,9 @@ void EnemyProcess(mutex& m)
 
 void PrintPlayer(void)
 {
+    GotoXY(gOld.playerX + 2, gInfo.playerY - 2); printf("   ");
+    GotoXY(gOld.playerX + 1, gInfo.playerY - 1); printf("      ");
+    GotoXY(gOld.playerX, gInfo.playerY); printf("        ");
     GotoXY(gInfo.playerX + 2, gInfo.playerY - 2); printf(" ■");
     GotoXY(gInfo.playerX + 1, gInfo.playerY - 1); printf("■■■");
     GotoXY(gInfo.playerX, gInfo.playerY); printf("■■■■");
@@ -114,38 +126,41 @@ void PrintPlayer(void)
 void MovePlayer(void)
 {
     if (GetAsyncKeyState(VK_LEFT) & 0x8000)
+    {
+        gOld.playerX = gInfo.playerX;
         gInfo.playerX = gInfo.playerX == 0 ? 0 : gInfo.playerX - 2;
+    }        
     if (GetAsyncKeyState(VK_RIGHT) & 0x8000)
+    {
+        gOld.playerX = gInfo.playerX;
         gInfo.playerX = gInfo.playerX == WIDTH - 8 ? WIDTH - 8 : gInfo.playerX + 2;
+    }
 }
 
 void PlayerShoot(void)
 {
-    int count = 0;
-    char shoot = '*';
+    char shoot = '0';
 
     if (GetAsyncKeyState(VK_SPACE) & 0x8000)
-        count = count == MAX ? count : count + 1;
-    for (int i = 0; i < count; ++i)
     {
-        gPlayer[i].x = gInfo.playerX + 2;
-        gPlayer[i].y = gPlayer[i].y == 0 ? HEIGHT - 3 : gPlayer[i].y - 1;
-        if (gPlayer[i].y > 2)
+        for (int i = 0; i < MAX; ++i)
         {
-            GotoXY(gPlayer[i].x, gPlayer[i].y);
-            cprintf("%c", shoot);//콘솔 출력
-        }
-        else
-        {
-            gPlayer[i].y = 0;
-            count--;
+            gPlayer[i].x = gInfo.playerX + 2;
+            gPlayer[i].y = gPlayer[i].y == 0 ? HEIGHT - 3 : gPlayer[i].y - 1;
+            if (gPlayer[i].y > 2)
+            {
+                GotoXY(gPlayer[i].x, gPlayer[i].y);
+                _cprintf("%c", shoot);//콘솔 출력
+            }
+            else
+                gPlayer[i].y = 0;
         }
     }
 }
 
 void PrintState(void)
 {
-    GotoXY(WIDTH / 2 - 16, 0);
+    GotoXY(WIDTH / 2 - 18, 0);
     int i = 7;
 
     cout << "YOU ";
@@ -172,11 +187,12 @@ void PlayerProcess()
 {
     while (gInfo.playerLife != 0)
     {
-        system("cls");
+        //system("cls");
         MovePlayer();
         PrintPlayer();
         PlayerShoot();
         PrintState();
+        Sleep(50);
     }
 }
 
