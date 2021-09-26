@@ -8,10 +8,11 @@
 #include <thread>
 #include <mutex>
 #include <conio.h>
+//#include <cstring>
 
 using namespace std;
 #define SIZE 64
-#define MAX 10
+#define MAX 5
 #define WIDTH 100
 #define HEIGHT 30
 
@@ -20,7 +21,7 @@ struct Info
     int playerX = WIDTH / 2;//플레이어 시작 위치
     int playerY = HEIGHT - 2;
     int playerLife = 6;
-    int enemyX = WIDTH / 2;
+    int enemyX = 0;//왼쪽에서 오른쪽 왔다갔다
     int enemyY = 2;
     int enemyLife = 6;
 };
@@ -29,7 +30,7 @@ struct OldInfo
 {
     int playerX = WIDTH / 2;
     int playerY = HEIGHT - 2;
-    int enemyX = WIDTH / 2;
+    int enemyX = 0;
     int enemyY = 2;
 };
 
@@ -43,6 +44,7 @@ Info gInfo;
 OldInfo gOld;
 Shoot gPlayer[MAX];
 Shoot gEnemy[MAX];
+char gStatus[28] = "YOU ###### VS ###### ENEMY";//28
 
 void SetCursor(BOOL bshow)
 {//커서를 보이게 또는 안 보이게 하는 함수
@@ -102,15 +104,62 @@ void Title(void)
     _getch();
 }
 
-void PrintEnemy(void)
+void MoveNPrintEnemy(void)
 {
-    printf("□□□□");
-    printf(" □□□");
-    printf("   □");
+    static bool goLeft = true;
+
+    gOld.enemyX = gInfo.enemyX;
+    GotoXY(gOld.enemyX, gInfo.enemyY); printf("        ");
+    if (goLeft == true)
+    {
+        ++gInfo.enemyX;
+        GotoXY(gOld.enemyX + 1, gInfo.enemyY + 1); printf("      ");
+        GotoXY(gOld.enemyX + 2, gInfo.enemyY + 2); printf("   ");
+        GotoXY(gInfo.enemyX, gInfo.enemyY); printf("□□□□");
+        GotoXY(gInfo.enemyX + 1, gInfo.enemyY + 1); printf("□□□");
+        GotoXY(gInfo.enemyX + 2, gInfo.enemyY + 2); printf(" □");
+    }
+    else
+    {
+        --gInfo.enemyX;
+        GotoXY(gOld.enemyX + 1, gInfo.enemyY + 1); printf("      ");
+        GotoXY(gOld.enemyX + 2, gInfo.enemyY + 2); printf("   ");
+        GotoXY(gInfo.enemyX, gInfo.enemyY); printf("□□□□");
+        GotoXY(gInfo.enemyX + 1, gInfo.enemyY + 1); printf("□□□");
+        GotoXY(gInfo.enemyX + 2, gInfo.enemyY + 2); printf(" □");
+    }
+
+    if (gInfo.enemyX == WIDTH - 8)
+        goLeft = false;
+    else if (gInfo.enemyX == 0)
+        goLeft = true;
 }
 
-void EnemyProcess(mutex& m)
+void EnemyShoot(void)
 {
+    static int num = 0;
+    int oldY = 0;
+    char shoot = 'V';
+    
+    num = num == MAX ? num : num + 1;
+    for (int i = 0; i < num; ++i)
+    {
+        gEnemy[i].x = gEnemy[i].x != 0 ? gInfo.enemyX + 2 : gEnemy[i].x;
+        oldY = gEnemy[i].y;
+        gEnemy[i].y = gEnemy[i].y == HEIGHT - 2 ? 0 : gEnemy[i].y + 1;
+        if (gEnemy[i].y != 0)
+        {
+            GotoXY(gEnemy[i].x, oldY);
+            printf(" ");
+            GotoXY(gEnemy[i].x, gEnemy[i].y);
+            printf("%c", shoot);
+        }
+        else
+        {
+            --num;
+            gEnemy[i].x = 0;
+        }
+    }
 }
 
 void PrintPlayer(void)
@@ -140,58 +189,66 @@ void MovePlayer(void)
 void PlayerShoot(void)
 {
     char shoot = '0';
+    int oldY = 0;
 
     if (GetAsyncKeyState(VK_SPACE) & 0x8000)
     {
         for (int i = 0; i < MAX; ++i)
         {
             gPlayer[i].x = gInfo.playerX + 2;
+            oldY = gPlayer[i].y;
             gPlayer[i].y = gPlayer[i].y == 0 ? HEIGHT - 3 : gPlayer[i].y - 1;
-            if (gPlayer[i].y > 2)
+            if (gPlayer[i].y >= 1)
             {
+                GotoXY(gPlayer[i].x, oldY);
+                printf(" ");
                 GotoXY(gPlayer[i].x, gPlayer[i].y);
-                _cprintf("%c", shoot);//콘솔 출력
+                printf("%c", shoot);
             }
             else
+            {
                 gPlayer[i].y = 0;
+            }
         }
     }
 }
 
 void PrintState(void)
 {
-    GotoXY(WIDTH / 2 - 18, 0);
     int i = 7;
+    int j = 3;
 
-    cout << "YOU ";
     while (--i != 0)
     {
-        if (i > gInfo.playerLife)
-            cout << "☆";
+        if (i > gInfo.playerLife)//4~9
+            gStatus[++j] = '-';
         else
-            cout << "★";
+            gStatus[++j] = '#';
     }
-    cout << " VS ";
     i = 0;
+    j = 13;
     while (++i != 7)
     {
         if (i <= gInfo.enemyLife)
-            cout << "★";
+            gStatus[++j] = '#';//14~~19
         else
-            cout << "☆";
+            gStatus[++j] = '-';
     }
-    cout << " ENEMY";
+    GotoXY(WIDTH / 2 - 16, 0);
+    printf("%s", gStatus);
 }
 
-void PlayerProcess()
+void PlayerProcess(void)
 {
-    while (gInfo.playerLife != 0)
+    while (gInfo.playerLife != 0 && gInfo.enemyLife != 0)
     {
         //system("cls");
+        PrintState();
         MovePlayer();
         PrintPlayer();
         PlayerShoot();
-        PrintState();
+        MoveNPrintEnemy();
+        EnemyShoot();
         Sleep(50);
     }
 }
@@ -207,6 +264,9 @@ bool ResultDisplay(void)
 
     if (_getch() == VK_ESCAPE)//esc
         return false;
+
+    gInfo.playerLife = 6;
+    gInfo.enemyLife = 6;
     return true;
 }
 
@@ -217,19 +277,90 @@ int main(void)
     SetCursor(false);
     SetConsoleSize(WIDTH, HEIGHT);
 
-    mutex m;
+    //mutex m;
+    
     while (true)
     {
         Title();
 
         system("cls");
         //thread enemy(EnemyProcess, ref(m));
+        //thread playerShoot(PlayerShootThread);
+        //thread status(PrintStatusthread, p);
 
         PlayerProcess();
 
         //enemy.join();
+        //playerShoot.join();
+        //status.join();
         if (!ResultDisplay)
             break;
     }    
     return 0;
 }
+
+/*
+void PlayerShootThread(void)
+{
+    char shoot = '0';
+    int oldY = 0;
+
+    while (gInfo.playerLife != 0 && gInfo.enemyLife != 0)
+    {
+        if (GetAsyncKeyState(VK_SPACE) & 0x8000)
+        {
+            for (int i = 0; i < MAX; ++i)
+            {
+                gPlayer[i].x = gInfo.playerX + 2;
+                oldY = gPlayer[i].y;
+                gPlayer[i].y = gPlayer[i].y == 0 ? HEIGHT - 3 : gPlayer[i].y - 1;
+                if (gPlayer[i].y >= 1)
+                {
+                    GotoXY(gPlayer[i].x, oldY);
+                    printf(" ");
+                    GotoXY(gPlayer[i].x, gPlayer[i].y);
+                    printf("%c", shoot);
+                }
+                else
+                    gPlayer[i].y = 0;
+            }
+        }
+    }
+}
+
+//////
+void PrintStatusthread(char* status)
+{
+    while (gInfo.playerLife != 0 && gInfo.enemyLife != 0)
+    {
+        int i = 7;
+        int j = 3;
+
+        while (--i != 0)
+        {
+            if (i > gInfo.playerLife)//4~9
+                status[++j] = '#';
+            else
+                status[++j] = '-';
+        }
+        i = 0;
+        j = 13;
+        while (++i != 7)
+        {
+            if (i <= gInfo.enemyLife)
+                status[++j] = '#';//14~~19
+            else
+                status[++j] = '-';
+        }
+        GotoXY(WIDTH / 2 - 16, 0);
+        printf("%s", status);
+    }
+}
+
+//////
+//if (GetAsyncKeyState(VK_ESCAPE) & 0x8000)//
+        //{//
+            //gInfo.enemyLife = 0;//
+            //break;//스레드 검사용
+        //}//
+*/
