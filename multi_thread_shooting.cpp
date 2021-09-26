@@ -8,6 +8,7 @@
 #include <thread>
 #include <mutex>
 #include <conio.h>
+#include <ctime>
 //#include <cstring>
 
 using namespace std;
@@ -40,10 +41,16 @@ struct Shoot
     int y = 0;
 };
 
+struct EnemyShoot
+{
+    int x = 0;
+    int y = 4;
+};
+
 Info gInfo;
 OldInfo gOld;
 Shoot gPlayer[MAX];
-Shoot gEnemy[MAX];
+EnemyShoot gEnemy[MAX];
 char gStatus[28] = "YOU ###### VS ###### ENEMY";//28
 
 void SetCursor(BOOL bshow)
@@ -135,18 +142,27 @@ void MoveNPrintEnemy(void)
         goLeft = true;
 }
 
-void EnemyShoot(void)
+void PrintEnemyShoot(void)
 {
     static int num = 0;
-    int oldY = 0;
+    int oldY;
     char shoot = 'V';
+    //static time_t now = time(NULL);
     
+    //if (time(NULL) - now < 1)
+        //return;
     num = num == MAX ? num : num + 1;
     for (int i = 0; i < num; ++i)
     {
-        gEnemy[i].x = gEnemy[i].x != 0 ? gInfo.enemyX + 2 : gEnemy[i].x;
+        gEnemy[i].x = gEnemy[i].x == 0 ? gInfo.enemyX + 2 : gEnemy[i].x;
         oldY = gEnemy[i].y;
-        gEnemy[i].y = gEnemy[i].y == HEIGHT - 2 ? 0 : gEnemy[i].y + 1;
+        if (oldY == HEIGHT - 2)
+        {
+            GotoXY(gEnemy[i].x, oldY);
+            printf(" ");
+        }
+        gEnemy[i].y = gEnemy[i].y == HEIGHT - 2 ? 4 : gEnemy[i].y + 1;
+        
         if (gEnemy[i].y != 0)
         {
             GotoXY(gEnemy[i].x, oldY);
@@ -157,9 +173,11 @@ void EnemyShoot(void)
         else
         {
             --num;
+            gEnemy[i].y = 0;
             gEnemy[i].x = 0;
         }
     }
+    //now = time(NULL);
 }
 
 void PrintPlayer(void)
@@ -248,7 +266,7 @@ void PlayerProcess(void)
         PrintPlayer();
         PlayerShoot();
         MoveNPrintEnemy();
-        EnemyShoot();
+        PrintEnemyShoot();
         Sleep(50);
     }
 }
