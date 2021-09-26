@@ -35,10 +35,10 @@ struct OldInfo
     int enemyY = 2;
 };
 
-struct Shoot
+struct PlayerShoot
 {
     int x = 0;
-    int y = 0;
+    int y = HEIGHT - 4;
 };
 
 struct EnemyShoot
@@ -49,7 +49,7 @@ struct EnemyShoot
 
 Info gInfo;
 OldInfo gOld;
-Shoot gPlayer[MAX];
+PlayerShoot gPlayer[MAX];
 EnemyShoot gEnemy[MAX];
 char gStatus[28] = "YOU ###### VS ###### ENEMY";//28
 
@@ -91,6 +91,7 @@ COORD GetXY(void)
 
 void Title(void)
 {
+    GotoXY(0, 0);
     printf("\n\n\n\n");
     printf("    ■    ■              ■  ■                         ■          \n"); Sleep(80);
     printf("    ■    ■    ■    ■  ■  ■      ■■■   ■        ■  ■    ■\n"); Sleep(80);
@@ -149,7 +150,7 @@ void PrintEnemyShoot(void)
     //static time_t now = time(NULL);
     
     //if (time(NULL) - now < 1)
-        //return;
+      //  return;
     num = num == MAX ? num : num + 1;
     for (int i = 0; i < num; ++i)
     {
@@ -197,29 +198,30 @@ void MovePlayer(void)
     }
 }
 
-void PlayerShoot(void)
+void PrintPlayerShoot(void)
 {
+    static int num = 0;
     char shoot = '0';
-    int oldY = 0;
 
     if (GetAsyncKeyState(VK_SPACE) & 0x8000)
+        num = num == MAX ? num : num + 1;
+    for (int i = 0; i < num; ++i)
     {
-        for (int i = 0; i < MAX; ++i)
+        gPlayer[i].x = gPlayer[i].x == 0 ? gInfo.playerX + 2 : gPlayer[i].x;
+        if (gPlayer[i].y != 1)
         {
-            gPlayer[i].x = gInfo.playerX + 2;
-            oldY = gPlayer[i].y;
-            gPlayer[i].y = gPlayer[i].y == 0 ? HEIGHT - 3 : gPlayer[i].y - 1;
-            if (gPlayer[i].y >= 1)
-            {
-                GotoXY(gPlayer[i].x, oldY);
-                printf(" ");
-                GotoXY(gPlayer[i].x, gPlayer[i].y);
-                printf("%c", shoot);
-            }
-            else
-            {
-                gPlayer[i].y = 0;
-            }
+            GotoXY(gPlayer[i].x, gPlayer[i].y);
+            printf(" ");
+            GotoXY(gPlayer[i].x, --gPlayer[i].y);
+            printf("%c", shoot);
+        }
+        else
+        {
+            --num;
+            GotoXY(gPlayer[i].x, gPlayer[i].y);
+            printf(" ");
+            gPlayer[i].y = HEIGHT - 4;
+            gPlayer[i].x = 0;
         }
     }
 }
@@ -228,6 +230,22 @@ void PrintState(void)
 {
     int i = 7;
     int j = 3;
+
+    for (int k = 0; k < MAX; ++k)
+    {
+        if (gPlayer[k].y == 2 &&
+            (gPlayer[k].x >= gInfo.enemyX && gPlayer[k].x <= gInfo.enemyX + 8))
+        {
+            --gInfo.enemyLife;
+            gPlayer[k].y = 1;
+        }
+        if (gEnemy[k].y == HEIGHT - 2 && 
+            (gEnemy[k].x >= gInfo.playerX && gEnemy[k].x >= gInfo.playerX + 8))
+        {
+            --gInfo.playerLife;
+            gEnemy[k].y = 4;
+        }
+    }
 
     while (--i != 0)
     {
@@ -257,7 +275,7 @@ void PlayerProcess(void)
         PrintState();
         MovePlayer();
         PrintPlayer();
-        PlayerShoot();
+        PrintPlayerShoot();
         MoveNPrintEnemy();
         PrintEnemyShoot();
         Sleep(50);
@@ -266,18 +284,28 @@ void PlayerProcess(void)
 
 bool ResultDisplay(void)
 {
-    GotoXY(WIDTH - 4, HEIGHT / 2 - 1);
-    if (gInfo.playerLife != 0)
-        printf("YOU WIN!\n");
-    else
-        printf("ENEMY WIN!\n");
-    printf("If you retry the game,\nplase enter nay key except ESC!");
+    while (true)
+    {
+        system("cls");
+        GotoXY(WIDTH / 2 - 4, HEIGHT / 2 - 1);
+        if (gInfo.playerLife != 0)
+            printf("YOU WIN!\n\n");
+        else
+            printf("ENEMY WIN!\n\n");
+        GotoXY(WIDTH / 2 - 34, HEIGHT / 2 + 1);
+        printf("Press 'enter' key to restart the game or 'esc' key to quit the game!\n");
 
-    if (_getch() == VK_ESCAPE)//esc
-        return false;
+        int result = _getch();
+        if (result == VK_ESCAPE)//esc
+            return false;
+        else if (result == VK_RETURN)//enter
+            break;
+    }
 
     gInfo.playerLife = 6;
     gInfo.enemyLife = 6;
+    gInfo.playerX = WIDTH / 2;
+    gInfo.playerY = HEIGHT - 2;
     return true;
 }
 
@@ -292,6 +320,7 @@ int main(void)
     
     while (true)
     {
+        system("cls");
         Title();
 
         system("cls");
@@ -300,78 +329,14 @@ int main(void)
         //thread status(PrintStatusthread, p);
 
         PlayerProcess();
+        //cin.ignore(1024);
 
         //enemy.join();
         //playerShoot.join();
         //status.join();
-        if (!ResultDisplay)
+        bool result = ResultDisplay();
+        if (result == false)
             break;
     }    
     return 0;
 }
-
-/*
-void PlayerShootThread(void)
-{
-    char shoot = '0';
-    int oldY = 0;
-
-    while (gInfo.playerLife != 0 && gInfo.enemyLife != 0)
-    {
-        if (GetAsyncKeyState(VK_SPACE) & 0x8000)
-        {
-            for (int i = 0; i < MAX; ++i)
-            {
-                gPlayer[i].x = gInfo.playerX + 2;
-                oldY = gPlayer[i].y;
-                gPlayer[i].y = gPlayer[i].y == 0 ? HEIGHT - 3 : gPlayer[i].y - 1;
-                if (gPlayer[i].y >= 1)
-                {
-                    GotoXY(gPlayer[i].x, oldY);
-                    printf(" ");
-                    GotoXY(gPlayer[i].x, gPlayer[i].y);
-                    printf("%c", shoot);
-                }
-                else
-                    gPlayer[i].y = 0;
-            }
-        }
-    }
-}
-
-//////
-void PrintStatusthread(char* status)
-{
-    while (gInfo.playerLife != 0 && gInfo.enemyLife != 0)
-    {
-        int i = 7;
-        int j = 3;
-
-        while (--i != 0)
-        {
-            if (i > gInfo.playerLife)//4~9
-                status[++j] = '#';
-            else
-                status[++j] = '-';
-        }
-        i = 0;
-        j = 13;
-        while (++i != 7)
-        {
-            if (i <= gInfo.enemyLife)
-                status[++j] = '#';//14~~19
-            else
-                status[++j] = '-';
-        }
-        GotoXY(WIDTH / 2 - 16, 0);
-        printf("%s", status);
-    }
-}
-
-//////
-//if (GetAsyncKeyState(VK_ESCAPE) & 0x8000)//
-        //{//
-            //gInfo.enemyLife = 0;//
-            //break;//스레드 검사용
-        //}//
-*/
