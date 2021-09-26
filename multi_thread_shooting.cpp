@@ -145,7 +145,6 @@ void MoveNPrintEnemy(void)
 void PrintEnemyShoot(void)
 {
     static int num = 0;
-    int oldY;
     char shoot = 'V';
     //static time_t now = time(NULL);
     
@@ -155,25 +154,19 @@ void PrintEnemyShoot(void)
     for (int i = 0; i < num; ++i)
     {
         gEnemy[i].x = gEnemy[i].x == 0 ? gInfo.enemyX + 2 : gEnemy[i].x;
-        oldY = gEnemy[i].y;
-        if (oldY == HEIGHT - 2)
+        if (gEnemy[i].y != HEIGHT - 2)
         {
-            GotoXY(gEnemy[i].x, oldY);
-            printf(" ");
-        }
-        gEnemy[i].y = gEnemy[i].y == HEIGHT - 2 ? 4 : gEnemy[i].y + 1;
-        
-        if (gEnemy[i].y != 0)
-        {
-            GotoXY(gEnemy[i].x, oldY);
-            printf(" ");
             GotoXY(gEnemy[i].x, gEnemy[i].y);
+            printf(" ");
+            GotoXY(gEnemy[i].x, ++gEnemy[i].y);
             printf("%c", shoot);
         }
         else
         {
             --num;
-            gEnemy[i].y = 0;
+            GotoXY(gEnemy[i].x, gEnemy[i].y);
+            printf(" ");
+            gEnemy[i].y = 4;
             gEnemy[i].x = 0;
         }
     }
