@@ -1,15 +1,9 @@
-﻿// multi_thread_shooting.cpp : 이 파일에는 'main' 함수가 포함됩니다. 거기서 프로그램 실행이 시작되고 종료됩니다.
-//
-
-#include <iostream>
-//#include <cstdlib>
+﻿#include <iostream>
 #include <windows.h>
 #include <stdio.h>
 #include <thread>
 #include <mutex>
 #include <conio.h>
-#include <ctime>
-//#include <cstring>
 
 using namespace std;
 #define SIZE 64
@@ -52,6 +46,7 @@ OldInfo gOld;
 PlayerShoot gPlayer[MAX];
 EnemyShoot gEnemy[MAX];
 char gStatus[28] = "YOU ###### VS ###### ENEMY";//28
+//mutex m;
 
 void SetCursor(BOOL bshow)
 {//커서를 보이게 또는 안 보이게 하는 함수
@@ -99,17 +94,33 @@ void Title(void)
     printf("    ■    ■    ■    ■  ■  ■     ■    ■  ■    ■  ■     ■   \n"); Sleep(80);
     printf("     ■■■     ■■  ■  ■  ■      ■■■   ■    ■  ■    ■    \n"); Sleep(80);
     printf("\n\n");
-    printf("                                                      ■                ■■       \n"); Sleep(80);
-    printf("                    ■■■   ■          ■■■       ■    ■■■     ■      ■  \n"); Sleep(80);
-    printf("                   ■    ■  ■■■■  ■■■■■     ■  ■■■■■ ■■■  ■■■\n"); Sleep(80);
-    printf("                   ■    ■  ■    ■   ■            ■   ■          ■      ■  \n"); Sleep(80);
-    printf("                    ■■■   ■    ■    ■■■       ■    ■■■     ■      ■  \n"); Sleep(80);
+    printf("                                                       ■                ■■       \n"); Sleep(80);
+    printf("                     ■■■   ■          ■■■       ■    ■■■     ■      ■  \n"); Sleep(80);
+    printf("                    ■    ■  ■■■■  ■■■■■     ■  ■■■■■ ■■■  ■■■\n"); Sleep(80);
+    printf("                    ■    ■  ■    ■   ■            ■   ■          ■      ■  \n"); Sleep(80);
+    printf("                     ■■■   ■    ■    ■■■       ■    ■■■     ■      ■  \n"); Sleep(80);
 
     printf("\n\n\n\n");
     COORD cur = GetXY();
     GotoXY(WIDTH / 2 - 16, cur.Y);
     printf("press any key to start the game!");
     _getch();
+}
+
+///////////////////////////////
+
+void MovePlayer(void)
+{
+    if (GetAsyncKeyState(VK_LEFT) & 0x8000)//0x8000
+    {
+        gOld.playerX = gInfo.playerX;
+        gInfo.playerX = gInfo.playerX == 0 ? 0 : gInfo.playerX - 2;
+    }
+    if (GetAsyncKeyState(VK_RIGHT) & 0x8000)
+    {
+        gOld.playerX = gInfo.playerX;
+        gInfo.playerX = gInfo.playerX == WIDTH - 8 ? WIDTH - 8 : gInfo.playerX + 2;
+    }
 }
 
 void MoveNPrintEnemy(void)
@@ -147,7 +158,7 @@ void PrintEnemyShoot(void)
 {
     static int num = 0;
     char shoot = 'V';
-    
+
     num = num == MAX ? num : num + 1;
     for (int i = 0; i < num; ++i)
     {
@@ -161,12 +172,6 @@ void PrintEnemyShoot(void)
         }
         else
         {
-            if (gEnemy[i].x >= gInfo.playerX && gEnemy[i].x <= gInfo.playerX + 8)//8
-            {
-                --gInfo.playerLife;
-                gEnemy[i].y = 4;
-            }
-
             --num;
             GotoXY(gEnemy[i].x, gEnemy[i].y);
             printf(" ");
@@ -184,21 +189,7 @@ void PrintPlayer(void)
     GotoXY(gInfo.playerX + 2, gInfo.playerY - 2); printf(" ■");
     GotoXY(gInfo.playerX + 1, gInfo.playerY - 1); printf("■■■");
     GotoXY(gInfo.playerX, gInfo.playerY); printf("■■■■");
-}
-
-void MovePlayer(void)
-{
-    if (GetAsyncKeyState(VK_LEFT) & 0x8000)
-    {
-        gOld.playerX = gInfo.playerX;
-        gInfo.playerX = gInfo.playerX == 0 ? 0 : gInfo.playerX - 2;
-    }        
-    if (GetAsyncKeyState(VK_RIGHT) & 0x8000)
-    {
-        gOld.playerX = gInfo.playerX;
-        gInfo.playerX = gInfo.playerX == WIDTH - 8 ? WIDTH - 8 : gInfo.playerX + 2;
-    }
-}
+}//버퍼에 전체 그림 그리고 출력하는 식 아니면 스레드 썼을 때 잔상 남는 듯
 
 void PrintPlayerShoot(void)
 {
@@ -215,16 +206,14 @@ void PrintPlayerShoot(void)
             GotoXY(gPlayer[i].x, gPlayer[i].y);
             printf(" ");
             GotoXY(gPlayer[i].x, --gPlayer[i].y);
-            printf("%c", shoot);          
+            printf("%c", shoot);
         }
         else
         {
             if (gPlayer[i].x >= gInfo.enemyX && gPlayer[i].x <= gInfo.enemyX + 8)//8
             {
-                --gInfo.enemyLife;
                 GotoXY(gPlayer[i].x, gPlayer[i].y);
                 printf(" ");
-                gPlayer[i].y = HEIGHT - 4;
             }
 
             --num;
@@ -265,7 +254,6 @@ void PlayerProcess(void)
 {
     while (gInfo.playerLife != 0 && gInfo.enemyLife != 0)
     {
-        //system("cls");
         PrintState();
         MovePlayer();
         PrintPlayer();
@@ -273,6 +261,28 @@ void PlayerProcess(void)
         MoveNPrintEnemy();
         PrintEnemyShoot();
         Sleep(50);
+    }
+}
+
+void DemageCheck(void)
+{
+    while (gInfo.playerLife != 0 && gInfo.enemyLife != 0)
+    {
+        for (int i = 0; i < MAX; ++i)
+        {
+            if (gPlayer[i].y == 1 && gPlayer[i].x >= gInfo.enemyX &&
+                gPlayer[i].x <= gInfo.enemyX + 8)//8
+            {
+                --gInfo.enemyLife;
+                gPlayer[i].y = HEIGHT - 4;
+            }
+            if (gEnemy[i].y == HEIGHT - 2 && gEnemy[i].x >= gInfo.playerX &&
+                gEnemy[i].x <= gInfo.playerX + 8)//8
+            {
+                --gInfo.playerLife;
+                gEnemy[i].y = 4;
+            }
+        }
     }
 }
 
@@ -311,26 +321,21 @@ int main(void)
     SetConsoleSize(WIDTH, HEIGHT);
 
     //mutex m;
-    
+
     while (true)
     {
         system("cls");
         Title();
 
         system("cls");
-        //thread enemy(EnemyProcess, ref(m));
-        //thread playerShoot(PlayerShootThread);
-        //thread decisionThread(PrintStatusthread, p);
+        thread TDdemageCheck(DemageCheck);
 
         PlayerProcess();
-        //cin.ignore(1024);
 
-        //enemy.join();
-        //playerShoot.join();
-        //decisionThread.join();
+        TDdemageCheck.join();
         bool result = ResultDisplay();
         if (result == false)
             break;
-    }    
+    }
     return 0;
 }
