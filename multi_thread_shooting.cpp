@@ -2,7 +2,7 @@
 //
 
 #include <iostream>
-#include <cstdlib>
+//#include <cstdlib>
 #include <windows.h>
 #include <stdio.h>
 #include <thread>
@@ -147,10 +147,7 @@ void PrintEnemyShoot(void)
 {
     static int num = 0;
     char shoot = 'V';
-    //static time_t now = time(NULL);
     
-    //if (time(NULL) - now < 1)
-      //  return;
     num = num == MAX ? num : num + 1;
     for (int i = 0; i < num; ++i)
     {
@@ -164,6 +161,12 @@ void PrintEnemyShoot(void)
         }
         else
         {
+            if (gEnemy[i].x >= gInfo.playerX && gEnemy[i].x <= gInfo.playerX + 8)//8
+            {
+                --gInfo.playerLife;
+                gEnemy[i].y = 4;
+            }
+
             --num;
             GotoXY(gEnemy[i].x, gEnemy[i].y);
             printf(" ");
@@ -171,7 +174,6 @@ void PrintEnemyShoot(void)
             gEnemy[i].x = 0;
         }
     }
-    //now = time(NULL);
 }
 
 void PrintPlayer(void)
@@ -208,15 +210,23 @@ void PrintPlayerShoot(void)
     for (int i = 0; i < num; ++i)
     {
         gPlayer[i].x = gPlayer[i].x == 0 ? gInfo.playerX + 2 : gPlayer[i].x;
-        if (gPlayer[i].y != 1)
+        if (gPlayer[i].y > 1)
         {
             GotoXY(gPlayer[i].x, gPlayer[i].y);
             printf(" ");
             GotoXY(gPlayer[i].x, --gPlayer[i].y);
-            printf("%c", shoot);
+            printf("%c", shoot);          
         }
         else
         {
+            if (gPlayer[i].x >= gInfo.enemyX && gPlayer[i].x <= gInfo.enemyX + 8)//8
+            {
+                --gInfo.enemyLife;
+                GotoXY(gPlayer[i].x, gPlayer[i].y);
+                printf(" ");
+                gPlayer[i].y = HEIGHT - 4;
+            }
+
             --num;
             GotoXY(gPlayer[i].x, gPlayer[i].y);
             printf(" ");
@@ -230,22 +240,6 @@ void PrintState(void)
 {
     int i = 7;
     int j = 3;
-
-    for (int k = 0; k < MAX; ++k)
-    {
-        if (gPlayer[k].y == 2 &&
-            (gPlayer[k].x >= gInfo.enemyX && gPlayer[k].x <= gInfo.enemyX + 8))
-        {
-            --gInfo.enemyLife;
-            gPlayer[k].y = 1;
-        }
-        if (gEnemy[k].y == HEIGHT - 2 && 
-            (gEnemy[k].x >= gInfo.playerX && gEnemy[k].x >= gInfo.playerX + 8))
-        {
-            --gInfo.playerLife;
-            gEnemy[k].y = 4;
-        }
-    }
 
     while (--i != 0)
     {
@@ -311,8 +305,8 @@ bool ResultDisplay(void)
 
 int main(void)
 {
-    SetConsoleTitle(TEXT("Until only one left"));//char* 아닌 wchar* 인자 받음
-    //그래서 매크로 TEXT() 사용
+    SetConsoleTitle(TEXT("Until only one left"));
+    //char* 아닌 wchar* 인자 받음. 그래서 매크로 TEXT() 사용
     SetCursor(false);
     SetConsoleSize(WIDTH, HEIGHT);
 
@@ -326,14 +320,14 @@ int main(void)
         system("cls");
         //thread enemy(EnemyProcess, ref(m));
         //thread playerShoot(PlayerShootThread);
-        //thread status(PrintStatusthread, p);
+        //thread decisionThread(PrintStatusthread, p);
 
         PlayerProcess();
         //cin.ignore(1024);
 
         //enemy.join();
         //playerShoot.join();
-        //status.join();
+        //decisionThread.join();
         bool result = ResultDisplay();
         if (result == false)
             break;
