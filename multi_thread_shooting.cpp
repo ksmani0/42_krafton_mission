@@ -88,11 +88,11 @@ void Title(void)
 {
     GotoXY(0, 0);
     printf("\n\n\n\n");
-    printf("    ■    ■              ■  ■                         ■          \n"); Sleep(80);
-    printf("    ■    ■    ■    ■  ■  ■      ■■■   ■        ■  ■    ■\n"); Sleep(80);
-    printf("    ■    ■  ■■■      ■  ■     ■    ■  ■■■■  ■   ■ ■  \n"); Sleep(80);
-    printf("    ■    ■    ■    ■  ■  ■     ■    ■  ■    ■  ■     ■   \n"); Sleep(80);
-    printf("     ■■■     ■■  ■  ■  ■      ■■■   ■    ■  ■    ■    \n"); Sleep(80);
+    printf("    ■    ■                      ■                         ■          \n"); Sleep(80);
+    printf("    ■    ■ ■         ■    ■  ■      ■■■   ■        ■  ■    ■\n"); Sleep(80);
+    printf("    ■    ■ ■■■■ ■■■      ■     ■    ■  ■■■■  ■   ■ ■  \n"); Sleep(80);
+    printf("    ■    ■ ■    ■   ■    ■  ■     ■    ■  ■    ■  ■     ■   \n"); Sleep(80);
+    printf("     ■■■  ■    ■   ■■  ■  ■      ■■■   ■    ■  ■    ■    \n"); Sleep(80);
     printf("\n\n");
     printf("                                                       ■                ■■       \n"); Sleep(80);
     printf("                     ■■■   ■          ■■■       ■    ■■■     ■      ■  \n"); Sleep(80);
@@ -328,7 +328,7 @@ int main(void)
         Title();
 
         system("cls");
-        thread TDdemageCheck(DemageCheck);
+        thread TDdemageCheck(DemageCheck);//데미지 연산 게임 중 반복
 
         PlayerProcess();
 
